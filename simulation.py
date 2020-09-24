@@ -20,8 +20,7 @@ class Queue:
 
 
 class Server:
-    def __init__(self, ppm):
-        self.page_rate = ppm
+    def __init__(self):
         self.current_task = None
         self.time_remaining = 0
 
@@ -39,11 +38,11 @@ class Server:
 
     def start_next(self, new_task):
         self.current_task = new_task
-        self.time_remaining = new_task * 60 / self.page_rate
 
 
 class Request:
     def __init__(self, request_inst):
+        self.server_query_time = int(request_inst[0])
         self.request_timestamp = int(request_inst[2])
         self.current_request = request_inst
 
@@ -53,11 +52,11 @@ class Request:
     def get_current_request(self):
         return self.current_request
 
-    def wait_time(self, current_time):
-        return current_time - self.request_timestamp
+    def wait_time(self):
+        return self.server_query_time - self.request_timestamp
 
 
-def main(file=str(), oneserver=True):
+def main():
     server_queue = Queue()
     parser = argparse.ArgumentParser()
     parser.add_argument("--fileloc", help="this is the file you wish to use for the parser")
@@ -71,19 +70,19 @@ def main(file=str(), oneserver=True):
             request = Request(currentrow)
             server_queue.enqueue(request)
 
-    if oneserver:
-        simulateOneServer(3600, server_queue)
+    simulateOneServer(server_queue)
 
 
-def simulateOneServer(num_seconds, query):
+def simulateOneServer(query):
     waiting_times = []
-    available_server = Server(60)
+    available_server = Server()
 
-    for current_second in range(num_seconds):
+    for current_Request in range(0,query.size()):
+
         if (not available_server.busy()) and (not query.is_empty()):
             next_task = query.dequeue()
-            # print(next_task.get_current_request())
-            waiting_times.append(next_task.wait_time(current_second))
+
+            waiting_times.append(next_task.wait_time())
             available_server.start_next(next_task.request_timestamp)
 
         available_server.tick()
