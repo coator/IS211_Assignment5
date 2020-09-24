@@ -20,8 +20,7 @@ class Queue:
 
 
 class Server:
-    def __init__(self, ppm):
-        self.page_rate = ppm
+    def __init__(self):
         self.current_task = None
         self.time_remaining = 0
 
@@ -39,7 +38,6 @@ class Server:
 
     def start_next(self, new_task):
         self.current_task = new_task
-        self.time_remaining = new_task * 60 / self.page_rate
 
 
 class Request:
@@ -77,19 +75,22 @@ def main(file=str(), oneserver=True):
 
 def simulateOneServer(num_seconds, query):
     waiting_times = []
-    available_server = Server(60)
+    available_server = Server()
 
     for current_second in range(num_seconds):
         if (not available_server.busy()) and (not query.is_empty()):
             next_task = query.dequeue()
             # print(next_task.get_current_request())
-            waiting_times.append(next_task.wait_time(current_second))
+            g= next_task.wait_time(current_second)
+            waiting_times.append(g)
             available_server.start_next(next_task.request_timestamp)
 
         available_server.tick()
 
     average_wait = sum(waiting_times) / len(waiting_times)
-    print("Average Wait {0} secs {1} tasks remaining.".format(average_wait, query.size()))
+    print("Average Wait %6.2f secs %3d tasks remaining." % (average_wait, query.size()))
+
+
 
 
 
