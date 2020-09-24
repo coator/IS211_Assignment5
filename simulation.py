@@ -18,6 +18,9 @@ class Queue:
     def size(self):
         return len(self.items)
 
+    def peek(self):
+        return self.items[len(self.items)-1]
+
 
 class Server:
     def __init__(self):
@@ -53,8 +56,8 @@ class Request:
         return self.current_request
 
     def wait_time(self):
+        print(self.server_query_time, '    ', self.request_timestamp)
         return self.server_query_time - self.request_timestamp
-
 
 def main():
     server_queue = Queue()
@@ -78,11 +81,17 @@ def simulateOneServer(query):
     available_server = Server()
 
     for current_Request in range(0,query.size()):
+        current_queue = Queue()
+        current_queue.enqueue(query.dequeue())
+        while current_queue == query.peek():
+            if current_queue == query.peek():
+                current_queue.enqueue(query.dequeue())
 
         if (not available_server.busy()) and (not query.is_empty()):
             next_task = query.dequeue()
-
-            waiting_times.append(next_task.wait_time())
+            g = next_task.wait_time()
+            print(g)
+            waiting_times.append(g)
             available_server.start_next(next_task.request_timestamp)
 
         available_server.tick()
