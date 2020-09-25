@@ -1,5 +1,6 @@
 import argparse
 import csv
+import itertools
 
 
 class Queue:
@@ -23,9 +24,10 @@ class Queue:
 
 
 class Server:
-    def __init__(self):
+    def __init__(self, name=str()):
         self.current_task = None
         self.time_remaining = 0
+        self.name = name
 
     def tick(self):
         if self.current_task is not None:
@@ -56,49 +58,79 @@ class Request:
         return self.current_request
 
     def wait_time(self):
-        print(self.server_query_time, '    ', self.request_timestamp)
-        return self.server_query_time - self.request_timestamp
+        return self.request_timestamp
+
 
 def main():
     server_queue = Queue()
     parser = argparse.ArgumentParser()
-    parser.add_argument("--fileloc", help="this is the file you wish to use for the parser")
+    parser.add_argument("--fileloc", type=str, help="this is the file you wish to use for the parser")
+    parser.add_argument("--servers", type=int, default=1, help="this is for how many servers you wish to use")
     args = parser.parse_args()
+
+    if args.servers == 1:
+        simulateOneServer(args)
+    elif args.servers > 1:
+        simulateManyServers(args)
+    else:
+        print('an error has occurred, servers value must be greater than 0')
+
+
+def simulateOneServer(args):
+    waiting_times = []
+    available_server = Server()
+    current_queue = Queue()
 
     with open(args.fileloc, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=' ')
         for row in reader:
-            currentrow = ', '.join(row)
-            currentrow = tuple(currentrow.split(','))
+            currentrow = tuple(', '.join(row).split(','))
             request = Request(currentrow)
-            server_queue.enqueue(request)
+            current_queue.enqueue(request)
 
-    simulateOneServer(server_queue)
+    while current_queue.size() > 0:
+        if (not available_server.busy()) and (not current_queue.is_empty()):
+            next_task = current_queue.dequeue()
+            waiting_times.append(next_task.wait_time())
+            available_server.start_next(next_task.request_timestamp)
+
+        available_server.tick()
+
+    average_wait = sum(waiting_times) / len(waiting_times)
+    print("Average Wait {0} secs in queue.".format(average_wait))
 
 
-def simulateOneServer(query):
+def simulateManyServers(args):
     waiting_times = []
     available_server = Server()
+    current_queue = Queue()
+    seq = list(range(0, args.servers))
 
-    for current_Request in range(0,query.size()):
-        current_queue = Queue()
-        current_queue.enqueue(query.dequeue())
-        while current_queue == query.peek():
-            if current_queue == query.peek():
-                current_queue.enqueue(query.dequeue())
+    seq = {name: Server(name=name) for name in seq}
+    round_robin = itertools.cycle(seq)
 
-        if (not available_server.busy()) and (not query.is_empty()):
-            next_task = query.dequeue()
+    with open(args.fileloc, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=' ')
+        for row in reader:
+             next(round_robin)
+            #TODO: I need to go ahead and incorporate the round robin to "eat" the Queries
+            currentrow = tuple(', '.join(row).split(','))
+            request = Request(currentrow)
+            current_queue.enqueue(request)
+
+
+    while current_queue.size() > 0:
+
+        if (not available_server.busy()) and (not current_queue.is_empty()):
+            next_task = current_queue.dequeue()
             g = next_task.wait_time()
-            print(g)
+            #print(g)
             waiting_times.append(g)
             available_server.start_next(next_task.request_timestamp)
 
         available_server.tick()
 
     average_wait = sum(waiting_times) / len(waiting_times)
-    print("Average Wait {0} secs {1} tasks remaining.".format(average_wait, query.size()))
-
-
+    print("Average Wait {0} secs in queue.".format(average_wait))
 
 main()
