@@ -88,18 +88,45 @@ def simulateOneServer(args):
                 current_list.append(tuple(', '.join(row).split(',')))
             return current_list
 
-    current_queue = Queue()
-    waiting_times = []
+    url_queue = Queue()
     queue_list = queuepull()
-    for cs in range(len(queue_list)): #TODO: need to replace range with better way to get current second
-        for number_of_line, lineitem in enumerate(queue_list):
+    queue_list_divided = []
+    while len(queue_list) > 1:  # TODO: need to replace range with better way to get current second
+        request_check = queue_list.pop(0)
+        request = Request(request_check)
+        url_queue.enqueue(request)
+        if url_queue.items[0].current_request[0] == queue_list[0][0]:
+            request_check = queue_list.pop(0)
+            request = Request(request_check)
+            url_queue.enqueue(request)
+        else:
+            templist = []
+            for i in range(url_queue.size()):
+                templist.append(url_queue.dequeue())
+            queue_list_divided.append(templist)
+    for l in queue_list_divided:
+        print(len(l))
+        for ll in l:
+            print(ll.current_request)
+
+
+
+
+    """for cs in range(len(queue_list)): #TODO: need to replace range with better way to get current second
+        for queue_count, queue_data in enumerate(queue_list):
             #print('item is type', type(item), 'lineitem is type', type(lineitem), lineitem)
             #print(lineitem[0], cs)
-            if int(lineitem[0]) == cs:
-                print(cs, int(lineitem[0]))
-                request = Request(lineitem)
-                current_queue.enqueue(request)
+            #print(queue_data[0])
+            if int(queue_data[0]) == count:
+                print('found match')
+                print(count, int(queue_data[0]))
+                request = Request(queue_data)
+                current_queue.enqueue(queue_data)
                 print(current_queue.size())
+            else:
+                #print(count,' did not find a match; adding a count')
+                count+=1
+                break"""
 
 """        if (not lab_printer.busy()) and (not print_queue.is_empty()):
             next_task = print_queue.dequeue()
