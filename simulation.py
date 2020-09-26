@@ -80,26 +80,28 @@ def simulateOneServer(args):
     #def simulation(num_seconds, pages_per_minute):
        #lab_printer = Printer(pages_per_minute)
 
-    def queuepull(second):
-        current_queue = Queue
+    def queuepull():
         with open(args.fileloc, newline='') as csvfile:
+            current_list = []
             reader = csv.reader(csvfile, delimiter=' ')
             for row in reader:
-                currentrow = tuple(', '.join(row).split(','))
-                request = Request(currentrow)
-                if request[0]== current_second:
-                    current_queue.enqueue(request)
-                else:
-                    return current_queue
-
+                current_list.append(tuple(', '.join(row).split(',')))
+            return current_list
 
     current_queue = Queue()
     waiting_times = []
-    for current_second in range(0,10006): #TODO: need to replace range with better way to get current second
+    queue_list = queuepull()
+    for cs in range(len(queue_list)): #TODO: need to replace range with better way to get current second
+        for number_of_line, lineitem in enumerate(queue_list):
+            #print('item is type', type(item), 'lineitem is type', type(lineitem), lineitem)
+            #print(lineitem[0], cs)
+            if int(lineitem[0]) == cs:
+                print(cs, int(lineitem[0]))
+                request = Request(lineitem)
+                current_queue.enqueue(request)
+                print(current_queue.size())
 
-        current_queue = queuepull(current_second)
-        print(current_second, ' ---- ', current_queue)
-        if (not lab_printer.busy()) and (not print_queue.is_empty()):
+"""        if (not lab_printer.busy()) and (not print_queue.is_empty()):
             next_task = print_queue.dequeue()
         waiting_times.append(next_task.wait_time(current_second))
         lab_printer.start_next(next_task)
@@ -117,3 +119,5 @@ def simulateOneServer(args):
             return False
     for i in range(10):
         simulation(3600, 5)
+"""
+main()
