@@ -80,11 +80,25 @@ def simulateOneServer(args):
     #def simulation(num_seconds, pages_per_minute):
        #lab_printer = Printer(pages_per_minute)
 
-    print_queue = Queue()
+    def queuepull(second):
+        current_queue = Queue
+        with open(args.fileloc, newline='') as csvfile:
+            reader = csv.reader(csvfile, delimiter=' ')
+            for row in reader:
+                currentrow = tuple(', '.join(row).split(','))
+                request = Request(currentrow)
+                if request[0]== current_second:
+                    current_queue.enqueue(request)
+                else:
+                    return current_queue
+
+
+    current_queue = Queue()
     waiting_times = []
     for current_second in range(0,10006): #TODO: need to replace range with better way to get current second
 
-        print_queue.enqueue(task)
+        current_queue = queuepull(current_second)
+        print(current_second, ' ---- ', current_queue)
         if (not lab_printer.busy()) and (not print_queue.is_empty()):
             next_task = print_queue.dequeue()
         waiting_times.append(next_task.wait_time(current_second))
