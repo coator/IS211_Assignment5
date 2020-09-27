@@ -59,7 +59,7 @@ class Request:
 
 
 def main():
-    server_queue = Queue()
+    request_queue = Queue()
     parser = argparse.ArgumentParser()
     parser.add_argument("--fileloc", type=str, help="this is the file you wish to use for the parser")
     parser.add_argument("--servers", type=int, default=1, help="this is for how many servers you wish to use")
@@ -73,27 +73,26 @@ def main():
                 current_list.append(tuple(', '.join(row).split(',')))
             return current_list
 
-    url_queue = Queue()
-    queue_list = queuepull()
+    #request_queue = Queue()
+    request_list = queuepull()
     queue_list_divided = []
-    while 0 < len(queue_list):
-        if url_queue.is_empty() or url_queue.items[0].current_request[0] == queue_list[0][0]:
-            request_check = queue_list.pop(0)
-            request = Request(request_check)
-            url_queue.enqueue(request)
+    current_tick_req_queue = []
+    while 0 < len(request_list):
+        if request_queue.is_empty() or request_queue.items[0].current_request[0] == request_list[0][0]:
+            # request_queue.items[0].current_request[0] == request_list[0][0] is to check to check if the server request
+            # time is the same as the following server request and if so add it to the current request list.
+            pass
         else:
-            templist = []
-            for i in range(url_queue.size()):
-                templist.append(url_queue.dequeue())
-            queue_list_divided.append(templist)
-            request_check = queue_list.pop(0)
-            request = Request(request_check)
-            url_queue.enqueue(request)
-    templist = []
-    for i in range(url_queue.size()):
-        templist.append(url_queue.dequeue())
-    queue_list_divided.append(templist)
-
+            # On a Else clause it will take the enqueued requests list from request_queue and transfer it to a temporary
+            # list, then put that group of requests onto the queue_list_divided. This makes it possible to run
+            # the server simulations easier.
+            current_tick_req_queue.clear()
+            for i in range(request_queue.size()):
+                current_tick_req_queue.append(request_queue.dequeue())
+            queue_list_divided.append(current_tick_req_queue)
+        request_queue.enqueue(Request(request_list.pop(0)))
+    current_tick_req_queue = [request_queue.dequeue()]
+    queue_list_divided.append(current_tick_req_queue)
     if args.servers == 1:
         simulateOneServer(queue_list_divided)
     elif args.servers > 1:
@@ -103,17 +102,17 @@ def main():
 
 
 def simulateOneServer(queuelist):
-    url_queue = Queue()
+    request_queue = Queue()
     current_server = Server()
     count = len(queuelist)
     sum_total_wait_times = []
     for queries in queuelist:
         for i in queries:
-            url_queue.enqueue(i)
+            request_queue.enqueue(i)
         if not current_server.busy():
             waiting_times = []
-            while not url_queue.is_empty():
-                next_task = url_queue.dequeue()
+            while not request_queue.is_empty():
+                next_task = request_queue.dequeue()
                 waiting_times.append(next_task.wait_time())
                 current_server.start_next(next_task)
 
@@ -132,17 +131,17 @@ def simulateManyServers(queuelist, int_server):
     seq = list(range(0, int_server))
     seq = {name: Server(name=name) for name in seq}
     round_robin = itertools.cycle(seq)
-    url_queue = Queue()
+    request_queue = Queue()
     current_server = seq[next(round_robin)]
     count = len(queuelist)
     sum_total_wait_times = []
     for queries in queuelist:
         for i in queries:
-            url_queue.enqueue(i)
+            request_queue.enqueue(i)
         if not current_server.busy():
             waiting_times = []
-            while not url_queue.is_empty():
-                next_task = url_queue.dequeue()
+            while not request_queue.is_empty():
+                next_task = request_queue.dequeue()
                 waiting_times.append(next_task.wait_time())
                 current_server.start_next(next_task)
             current_server = seq[next(round_robin)]
